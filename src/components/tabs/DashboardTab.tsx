@@ -162,49 +162,47 @@ PLAZO: ${data.desired_deadline || 'No especificado'}
 INVERSIÓN: ${data.budget || 'No especificado'}
 `;
 
-  const prompt = `Eres un Product Manager senior especializado en diseño web y branding digital.
-Tu tarea es generar un PRD (Product Requirements Document) completo y profesional para construir la página web de este proyecto.
+  const prompt = `Eres un documentador técnico. Tu ÚNICA tarea es organizar los datos del formulario de briefing en formato PRD.
 
-Datos del proyecto:
+REGLA ABSOLUTA: Usa SOLAMENTE los datos proporcionados abajo. NO inventes, NO sugieras, NO agregues información que no esté en los datos. Si un campo dice "No especificado", simplemente omítelo del PRD. NO llenes vacíos con suposiciones.
+
+Datos del formulario:
 ${projectData}
 
-Genera el PRD en español con la siguiente estructura EXACTA (usa los encabezados con ##):
+Genera el PRD en español con esta estructura. Incluye SOLO las secciones que tengan datos reales:
 
-## 1. Resumen Ejecutivo
-Breve descripción del proyecto, objetivos y alcance.
+## 1. Resumen del Proyecto
+Nombre del negocio, dominio y descripción (solo con los datos de "Sobre nosotros" y "Quiénes somos").
 
-## 2. Sobre la Empresa
-Descripción de la empresa, historia, misión, visión, diferencial competitivo y slogan.
+## 2. Información de la Empresa
+Email, dirección, sector, año de fundación — solo lo que fue proporcionado.
 
-## 3. Público Objetivo y Mercado
-Análisis del público objetivo, tipo (B2B/B2C), mercado geográfico y segmentación.
+## 3. Público Objetivo
+Público objetivo, tipo (B2B/B2C), mercado geográfico — textual como fue informado.
 
-## 4. Identidad Visual y Branding
-Personalidad de marca, valores, tono de voz, colores (incluir los HEX), tipografía sugerida, estilo visual, estilos a evitar. Si hay una persona famosa como referencia, explicar qué atributos de esa persona se deben reflejar.
+## 4. Marca y Estrategia
+Diferencial, misión, slogan, personalidad, valores, tono de voz, persona famosa de referencia — solo datos del formulario.
 
-## 5. Estructura de Páginas y Secciones
-Lista detallada de todas las páginas que debe tener el sitio web y qué secciones incluir en cada una (Hero, About, Servicios, Testimonios, Contacto, etc). Ser específico.
+## 5. Identidad Visual
+Colores preferidos (incluir HEX si fueron dados), estilos a evitar, tipo de logo preferido, identidad actual, aplicaciones de marca — solo lo informado.
 
-## 6. Contenido y Copywriting
-Sugerencias de textos para las secciones principales usando el tono de voz definido. Incluir CTAs sugeridos.
+## 6. Referencias e Inspiración
+Marcas que admira, links de referencia visual, links de inspiración, competidores y sus links — listar exactamente como fueron proporcionados.
 
-## 7. Integraciones y Redes Sociales
-Links de redes sociales a integrar, WhatsApp, formularios de contacto, mapa (si hay dirección), etc.
+## 7. Contacto
+WhatsApp, teléfono fijo, móvil, horario de atención — solo los datos proporcionados.
 
-## 8. Requisitos Técnicos
-Dominio, hosting, responsive design, SEO básico, velocidad de carga, accesibilidad.
+## 8. Redes Sociales
+Instagram, Facebook, TikTok, LinkedIn, YouTube, Twitter/X, Website — listar solo las que tienen valor.
 
-## 9. Referencias e Inspiración
-Sitios de referencia, competidores a analizar, marcas que admira el cliente.
+## 9. Plazo y Presupuesto
+Plazo deseado e inversión — exactamente como fue informado.
 
-## 10. Cronograma y Presupuesto
-Plazo deseado por el cliente, inversión disponible, fases sugeridas de desarrollo.
-
-IMPORTANTE:
-- Sé específico y detallado, este PRD será usado directamente para construir la página.
-- Si un dato dice "No especificado", omítelo o sugiere una recomendación.
-- Usa un tono profesional pero accesible.
-- El PRD debe estar listo para entregar a un diseñador/desarrollador.`;
+REGLAS:
+- NO inventes textos de ejemplo, CTAs, nombres de páginas, tipografías ni nada que no esté en los datos.
+- NO hagas recomendaciones ni sugerencias.
+- Si una sección entera no tiene datos, omítela completamente.
+- Formato limpio y profesional. Solo hechos del formulario.`;
 
   const response = await ai.models.generateContent({
     model: 'gemini-2.0-flash',
@@ -220,7 +218,7 @@ const ProjectCard = ({
   onEdit,
   onDelete,
   userRole,
-}: {
+}: React.ComponentProps<'div'> & {
   data: OnboardingData;
   defaultOpen: boolean;
   onEdit: () => void;
