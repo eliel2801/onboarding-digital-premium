@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { CheckCircle2, Clock, Hourglass, Palette, Users, Swords, Image, Plus, ChevronDown, ChevronUp, Pencil, Globe, Phone, AtSign, Link2, ExternalLink, Mail, MapPin, Building2 as BuildingIcon, Calendar, Trash2, Archive } from 'lucide-react';
+import { CheckCircle2, Clock, Hourglass, Palette, Users, Swords, Image, Plus, ChevronDown, ChevronUp, Pencil, Globe, Phone, AtSign, Link2, ExternalLink, Mail, MapPin, Building2 as BuildingIcon, Calendar, Trash2, Archive, FileText, Loader2, Copy, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { GoogleGenAI } from '@google/genai';
 import { cn } from '../../lib/utils';
 import { OnboardingData, UserRole } from '../../types';
 import { Card, Button } from '../ui';
@@ -30,6 +31,173 @@ const DetailItem = ({ label, value }: { label: string; value?: string | null }) 
   );
 };
 
+// ─── PRD Modal ───
+const PrdModal = ({ prdContent, onClose }: { prdContent: string; onClose: () => void }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(prdContent);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        onClick={(e) => e.stopPropagation()}
+        className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden"
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-800">
+          <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+            <FileText size={18} strokeWidth={1.5} />
+            PRD Generado
+          </h2>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCopy}
+              className="flex items-center gap-2 px-4 py-2 bg-neutral-800 text-neutral-300 text-sm font-medium rounded-xl hover:bg-neutral-700 transition-all"
+            >
+              {copied ? <Check size={14} strokeWidth={1.5} /> : <Copy size={14} strokeWidth={1.5} />}
+              {copied ? 'Copiado' : 'Copiar'}
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 text-neutral-400 hover:text-white transition-colors rounded-lg hover:bg-neutral-800"
+            >
+              <X size={18} strokeWidth={1.5} />
+            </button>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto px-6 py-6">
+          <div className="prose prose-invert prose-sm max-w-none whitespace-pre-wrap text-neutral-300 leading-relaxed">
+            {prdContent}
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+// ─── Generate PRD with Gemini ───
+async function generatePRD(data: OnboardingData): Promise<string> {
+  const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY });
+
+  const projectData = `
+NOMBRE DEL NEGOCIO: ${data.business_name}
+SOBRE NOSOTROS: ${data.about_us || 'No especificado'}
+QUIÉNES SOMOS: ${data.who_we_are || 'No especificado'}
+EMAIL: ${data.business_email || 'No especificado'}
+DIRECCIÓN: ${data.business_address || 'No especificada'}
+SECTOR: ${data.industry_sector || 'No especificado'}
+AÑO DE FUNDACIÓN: ${data.year_founded || 'No especificado'}
+DOMINIO: ${data.selected_domain || 'No especificado'}
+
+--- ESTRATEGIA ---
+PÚBLICO OBJETIVO: ${data.target_audience || 'No especificado'}
+TIPO DE PÚBLICO: ${data.audience_type || 'No especificado'}
+COMPETIDORES: ${data.competitors || 'No especificado'}
+LINKS COMPETIDORES: ${data.competitor_links?.join(', ') || 'No especificado'}
+PERSONALIDAD DE MARCA: ${data.brand_personality?.join(', ') || 'No especificada'}
+VALORES DE MARCA: ${data.brand_values?.join(', ') || 'No especificados'}
+TONO DE VOZ: ${data.tone_of_voice || 'No especificado'}
+MERCADO GEOGRÁFICO: ${data.geographic_market || 'No especificado'}
+DIFERENCIAL: ${data.brand_differential || 'No especificado'}
+MISIÓN: ${data.brand_mission || 'No especificada'}
+SLOGAN: ${data.brand_slogan || 'No especificado'}
+PERSONA FAMOSA (referencia): ${data.brand_celebrity || 'No especificado'}
+
+--- IDENTIDAD VISUAL ---
+TIPO DE LOGO PREFERIDO: ${data.logo_type_pref || 'No especificado'}
+COLORES PREFERIDOS: ${data.preferred_colors || 'No especificado'}
+COLORES HEX: ${data.preferred_colors_hex?.join(', ') || 'No especificado'}
+ESTILOS A EVITAR: ${data.avoid_styles || 'No especificado'}
+REFERENCIAS VISUALES: ${data.visual_references || 'No especificado'}
+LINKS DE REFERENCIA VISUAL: ${data.visual_reference_links?.join(', ') || 'No especificado'}
+LINKS DE INSPIRACIÓN: ${data.inspiration_links?.join(', ') || 'No especificado'}
+APLICACIONES DE MARCA: ${data.brand_applications?.join(', ') || 'No especificado'}
+IDENTIDAD ACTUAL: ${data.current_identity_notes || 'No especificado'}
+
+--- CONTACTO ---
+WHATSAPP: ${data.whatsapp || 'No especificado'}
+TELÉFONO FIJO: ${data.phone_landline || 'No especificado'}
+MÓVIL: ${data.phone_mobile || 'No especificado'}
+HORARIO: ${data.business_hours || 'No especificado'}
+
+--- REDES SOCIALES ---
+INSTAGRAM: ${data.social_instagram || 'No especificado'}
+FACEBOOK: ${data.social_facebook || 'No especificado'}
+TIKTOK: ${data.social_tiktok || 'No especificado'}
+LINKEDIN: ${data.social_linkedin || 'No especificado'}
+YOUTUBE: ${data.social_youtube || 'No especificado'}
+TWITTER/X: ${data.social_twitter || 'No especificado'}
+WEBSITE: ${data.social_website || 'No especificado'}
+
+--- PROYECTO ---
+PLAZO: ${data.desired_deadline || 'No especificado'}
+INVERSIÓN: ${data.budget || 'No especificado'}
+`;
+
+  const prompt = `Eres un Product Manager senior especializado en diseño web y branding digital.
+Tu tarea es generar un PRD (Product Requirements Document) completo y profesional para construir la página web de este proyecto.
+
+Datos del proyecto:
+${projectData}
+
+Genera el PRD en español con la siguiente estructura EXACTA (usa los encabezados con ##):
+
+## 1. Resumen Ejecutivo
+Breve descripción del proyecto, objetivos y alcance.
+
+## 2. Sobre la Empresa
+Descripción de la empresa, historia, misión, visión, diferencial competitivo y slogan.
+
+## 3. Público Objetivo y Mercado
+Análisis del público objetivo, tipo (B2B/B2C), mercado geográfico y segmentación.
+
+## 4. Identidad Visual y Branding
+Personalidad de marca, valores, tono de voz, colores (incluir los HEX), tipografía sugerida, estilo visual, estilos a evitar. Si hay una persona famosa como referencia, explicar qué atributos de esa persona se deben reflejar.
+
+## 5. Estructura de Páginas y Secciones
+Lista detallada de todas las páginas que debe tener el sitio web y qué secciones incluir en cada una (Hero, About, Servicios, Testimonios, Contacto, etc). Ser específico.
+
+## 6. Contenido y Copywriting
+Sugerencias de textos para las secciones principales usando el tono de voz definido. Incluir CTAs sugeridos.
+
+## 7. Integraciones y Redes Sociales
+Links de redes sociales a integrar, WhatsApp, formularios de contacto, mapa (si hay dirección), etc.
+
+## 8. Requisitos Técnicos
+Dominio, hosting, responsive design, SEO básico, velocidad de carga, accesibilidad.
+
+## 9. Referencias e Inspiración
+Sitios de referencia, competidores a analizar, marcas que admira el cliente.
+
+## 10. Cronograma y Presupuesto
+Plazo deseado por el cliente, inversión disponible, fases sugeridas de desarrollo.
+
+IMPORTANTE:
+- Sé específico y detallado, este PRD será usado directamente para construir la página.
+- Si un dato dice "No especificado", omítelo o sugiere una recomendación.
+- Usa un tono profesional pero accesible.
+- El PRD debe estar listo para entregar a un diseñador/desarrollador.`;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.0-flash',
+    contents: prompt,
+  });
+
+  return response.text || 'Error al generar el PRD.';
+}
+
 const ProjectCard = ({
   data,
   defaultOpen,
@@ -44,6 +212,8 @@ const ProjectCard = ({
   userRole: UserRole;
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  const [prdLoading, setPrdLoading] = useState(false);
+  const [prdContent, setPrdContent] = useState<string | null>(null);
   const status = statusConfig[data.status] || statusConfig.pending;
   const StatusIcon = status.icon;
   const isArchived = data.deleted_by_user === true;
@@ -110,7 +280,7 @@ const ProjectCard = ({
             className="overflow-hidden"
           >
             <div className="px-6 pb-6 space-y-6 border-t border-neutral-800 pt-6">
-              {/* Botones Editar / Eliminar */}
+              {/* Botones Editar / Eliminar / Generar PRD */}
               <div className="flex justify-end gap-2">
                 <button
                   onClick={onDelete}
@@ -118,6 +288,25 @@ const ProjectCard = ({
                 >
                   <Trash2 size={14} strokeWidth={1.5} />
                   {userRole === 'admin' ? 'Eliminar permanentemente' : 'Eliminar'}
+                </button>
+                <button
+                  onClick={async () => {
+                    setPrdLoading(true);
+                    try {
+                      const result = await generatePRD(data);
+                      setPrdContent(result);
+                    } catch (err) {
+                      console.error('Error generating PRD:', err);
+                      setPrdContent('Error al generar el PRD. Por favor intenta de nuevo.');
+                    } finally {
+                      setPrdLoading(false);
+                    }
+                  }}
+                  disabled={prdLoading}
+                  className="flex items-center gap-2 px-4 py-2.5 border border-indigo-900/50 text-indigo-400 text-sm font-medium rounded-xl hover:bg-indigo-950/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {prdLoading ? <Loader2 size={14} strokeWidth={1.5} className="animate-spin" /> : <FileText size={14} strokeWidth={1.5} />}
+                  {prdLoading ? 'Generando PRD...' : 'Generar PRD'}
                 </button>
                 {!isArchived && (
                   <button
@@ -404,6 +593,13 @@ const ProjectCard = ({
               )}
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* PRD Modal */}
+      <AnimatePresence>
+        {prdContent && (
+          <PrdModal prdContent={prdContent} onClose={() => setPrdContent(null)} />
         )}
       </AnimatePresence>
     </Card>
