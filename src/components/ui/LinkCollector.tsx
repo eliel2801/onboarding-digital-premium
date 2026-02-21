@@ -65,6 +65,12 @@ export const LinkCollector = ({
     }
   };
 
+  const handleBlur = () => {
+    if (inputValue.trim()) {
+      addLinks(inputValue);
+    }
+  };
+
   const removeLink = (index: number) => {
     onChange(links.filter((_, i) => i !== index));
   };
@@ -85,6 +91,7 @@ export const LinkCollector = ({
           onChange={(e) => { setInputValue(e.target.value); setError(''); }}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
+          onBlur={handleBlur}
           placeholder={placeholder}
           className="w-full pl-10 pr-12 py-3 bg-neutral-800/60 border border-neutral-700 rounded-xl text-white placeholder-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-white/10 focus:border-neutral-500 transition-all"
         />
