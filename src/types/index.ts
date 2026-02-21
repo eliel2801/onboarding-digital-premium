@@ -79,4 +79,5 @@ export interface ManagedUser {
   email: string;
   role: UserRole;
   created_at: string;
+  is_banned: boolean;
 }

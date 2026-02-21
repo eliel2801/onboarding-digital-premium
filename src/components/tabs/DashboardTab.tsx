@@ -438,11 +438,9 @@ export const DashboardTab = ({ projects, onNewProject, onEditProject, onDeletePr
           </h1>
           <p className="text-neutral-500 text-sm">{projects.length} proyecto{projects.length !== 1 ? 's' : ''}{isAdmin ? ' en total' : ` creado${projects.length !== 1 ? 's' : ''}`}</p>
         </div>
-        {!isAdmin && (
-          <Button onClick={onNewProject} className="shrink-0">
-            <Plus size={18} strokeWidth={1.5} /> Nuevo Proyecto
-          </Button>
-        )}
+        <Button onClick={onNewProject} className="shrink-0">
+          <Plus size={18} strokeWidth={1.5} /> Nuevo Proyecto
+        </Button>
       </div>
 
       {/* Lista de proyectos */}
