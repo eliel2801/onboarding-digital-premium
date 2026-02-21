@@ -1,0 +1,493 @@
+import React, { useState } from 'react';
+import { CheckCircle2, Clock, Hourglass, Palette, Users, Swords, Image, Plus, ChevronDown, ChevronUp, Pencil, Globe, Phone, AtSign, Link2, ExternalLink, Mail, MapPin, Building2 as BuildingIcon, Calendar, Trash2, Archive } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { cn } from '../../lib/utils';
+import { OnboardingData, UserRole } from '../../types';
+import { Card, Button } from '../ui';
+
+interface DashboardTabProps {
+  projects: OnboardingData[];
+  onNewProject: () => void;
+  onEditProject: (project: OnboardingData) => void;
+  onDeleteProject: (projectId: string) => void;
+  userRole: UserRole;
+}
+
+const statusConfig: Record<string, { label: string; icon: React.ElementType; color: string }> = {
+  pending: { label: 'Briefing Recibido', icon: CheckCircle2, color: 'bg-neutral-800 text-neutral-300 border-neutral-700' },
+  in_progress: { label: 'En Curso', icon: Clock, color: 'bg-amber-950/30 text-amber-400 border-amber-800' },
+  completed: { label: 'Completado', icon: CheckCircle2, color: 'bg-emerald-950/30 text-emerald-400 border-emerald-800' },
+};
+
+// ─── Detail Row ───
+const DetailItem = ({ label, value }: { label: string; value?: string | null }) => {
+  if (!value) return null;
+  return (
+    <div>
+      <p className="text-neutral-400 text-[10px] uppercase font-medium tracking-wider mb-1">{label}</p>
+      <p className="text-sm text-neutral-300 leading-relaxed whitespace-pre-line">{value}</p>
+    </div>
+  );
+};
+
+const ProjectCard = ({
+  data,
+  defaultOpen,
+  onEdit,
+  onDelete,
+  userRole,
+}: {
+  data: OnboardingData;
+  defaultOpen: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+  userRole: UserRole;
+}) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  const status = statusConfig[data.status] || statusConfig.pending;
+  const StatusIcon = status.icon;
+  const isArchived = data.deleted_by_user === true;
+
+  const hasContactInfo = data.whatsapp || data.phone_landline || data.phone_mobile || data.business_hours;
+  const hasSocialInfo = data.social_instagram || data.social_facebook || data.social_tiktok || data.social_linkedin || data.social_youtube || data.social_twitter || data.social_website;
+  const hasBriefingInfo = data.brand_differential || data.brand_mission || data.brand_slogan || data.audience_type || data.brand_celebrity || data.visual_references || data.preferred_colors || data.avoid_styles;
+
+  return (
+    <Card className={cn("overflow-hidden", isArchived && "opacity-60")}>
+      {/* Cabecera del proyecto */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full p-6 flex items-center justify-between hover:bg-neutral-800/60 transition-colors"
+      >
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="w-11 h-11 rounded-xl bg-neutral-950 text-white flex items-center justify-center shrink-0 font-semibold text-base">
+            {data.business_name.charAt(0).toUpperCase()}
+          </div>
+          <div className="text-left min-w-0">
+            <h3 className="font-semibold text-white truncate">{data.business_name}</h3>
+            {data.selected_domain ? (
+              <a
+                href={`https://${data.selected_domain}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1 truncate"
+              >
+                <Globe size={10} strokeWidth={1.5} />
+                {data.selected_domain}
+                <ExternalLink size={9} strokeWidth={1.5} className="shrink-0" />
+              </a>
+            ) : (
+              <p className="text-xs text-neutral-500 truncate">{data.about_us}</p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {isArchived && (
+            <div className="px-2.5 py-1 rounded-full text-[10px] font-medium flex items-center gap-1 border bg-orange-950/30 text-orange-400 border-orange-800">
+              <Archive size={10} strokeWidth={1.5} />
+              Archivado por usuario
+            </div>
+          )}
+          <div className={cn("px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 border", status.color)}>
+            <StatusIcon size={12} strokeWidth={1.5} />
+            {status.label}
+          </div>
+          {isOpen
+            ? <ChevronUp size={16} strokeWidth={1.5} className="text-neutral-400" />
+            : <ChevronDown size={16} strokeWidth={1.5} className="text-neutral-400" />
+          }
+        </div>
+      </button>
+
+      {/* Detalles del proyecto */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="px-6 pb-6 space-y-6 border-t border-neutral-800 pt-6">
+              {/* Botones Editar / Eliminar */}
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={onDelete}
+                  className="flex items-center gap-2 px-4 py-2.5 border border-red-900/50 text-red-400 text-sm font-medium rounded-xl hover:bg-red-950/30 transition-all"
+                >
+                  <Trash2 size={14} strokeWidth={1.5} />
+                  {userRole === 'admin' ? 'Eliminar permanentemente' : 'Eliminar'}
+                </button>
+                {!isArchived && (
+                  <button
+                    onClick={onEdit}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-neutral-950 text-white text-sm font-medium rounded-xl hover:bg-neutral-800 transition-all"
+                  >
+                    <Pencil size={14} strokeWidth={1.5} />
+                    Editar Proyecto
+                  </button>
+                )}
+              </div>
+
+              {/* User email (admin view) */}
+              {userRole === 'admin' && data.user_email && (
+                <div className="text-xs text-neutral-500 font-mono">
+                  Usuario: {data.user_email}
+                </div>
+              )}
+
+              {/* Pipeline cards */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className={cn("p-3 rounded-xl border-l-2 bg-neutral-800/60", "border-l-white")}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-neutral-300">Briefing</span>
+                    <CheckCircle2 className="text-white" size={13} strokeWidth={1.5} />
+                  </div>
+                  <p className="text-[10px] text-neutral-500">Recibido</p>
+                </div>
+                <div className={cn("p-3 rounded-xl border-l-2 bg-neutral-800/60", data.status === 'in_progress' || data.status === 'completed' ? "border-l-white" : "border-l-neutral-700")}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-neutral-300">Producción</span>
+                    {data.status === 'in_progress' || data.status === 'completed'
+                      ? <Clock className="text-white" size={13} strokeWidth={1.5} />
+                      : <Hourglass className="text-neutral-300" size={13} strokeWidth={1.5} />
+                    }
+                  </div>
+                  <p className="text-[10px] text-neutral-500">{data.status === 'in_progress' ? 'En curso' : data.status === 'completed' ? 'Finalizado' : 'Pendiente'}</p>
+                </div>
+                <div className={cn("p-3 rounded-xl border-l-2 bg-neutral-800/60", data.status === 'completed' ? "border-l-white" : "border-l-neutral-700")}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-neutral-300">Entrega</span>
+                    {data.status === 'completed'
+                      ? <CheckCircle2 className="text-white" size={13} strokeWidth={1.5} />
+                      : <Hourglass className="text-neutral-300" size={13} strokeWidth={1.5} />
+                    }
+                  </div>
+                  <p className="text-[10px] text-neutral-500">{data.status === 'completed' ? 'Entregado' : 'Pendiente'}</p>
+                </div>
+              </div>
+
+              {/* Detalles del Negocio + Estrategia */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h4 className="font-medium text-white text-sm flex items-center gap-2">
+                    <Palette size={14} strokeWidth={1.5} /> Detalles del Negocio
+                  </h4>
+                  <DetailItem label="Sobre" value={data.about_us} />
+                  {data.selected_domain && (
+                    <div>
+                      <p className="text-neutral-400 text-[10px] uppercase font-medium tracking-wider mb-1">Dominio</p>
+                      <a
+                        href={`https://${data.selected_domain}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 border border-neutral-700 rounded-lg text-sm text-indigo-400 hover:border-indigo-500/50 hover:text-indigo-300 transition-colors"
+                      >
+                        <Globe size={13} strokeWidth={1.5} />
+                        {data.selected_domain}
+                        <ExternalLink size={11} strokeWidth={1.5} />
+                      </a>
+                    </div>
+                  )}
+                  <DetailItem label="Email" value={data.business_email} />
+                  <DetailItem label="Dirección" value={data.business_address} />
+                  <DetailItem label="Sector" value={data.industry_sector} />
+                  <DetailItem label="Año fundación" value={data.year_founded} />
+                  <DetailItem label="Tipo de Logo" value={data.logo_type_pref} />
+                  <DetailItem label="Diferencial" value={data.brand_differential} />
+                  <DetailItem label="Misión" value={data.brand_mission} />
+                  <DetailItem label="Slogan" value={data.brand_slogan} />
+                </div>
+
+                <div className="space-y-4">
+                  <h4 className="font-medium text-white text-sm flex items-center gap-2">
+                    <Users size={14} strokeWidth={1.5} /> Estrategia
+                  </h4>
+                  <DetailItem label="Público objetivo" value={data.target_audience} />
+                  <DetailItem label="Tipo de público" value={
+                    data.audience_type === 'b2c' ? 'Persona física (B2C)' :
+                    data.audience_type === 'b2b' ? 'Empresa (B2B)' :
+                    data.audience_type === 'both' ? 'Ambos (B2C + B2B)' :
+                    data.audience_type || undefined
+                  } />
+                  {data.competitors && (
+                    <div>
+                      <p className="text-neutral-400 text-[10px] uppercase font-medium tracking-wider mb-1 flex items-center gap-1">
+                        <Swords size={10} strokeWidth={1.5} /> Competidores
+                      </p>
+                      <p className="text-sm text-neutral-300 whitespace-pre-line">{data.competitors}</p>
+                    </div>
+                  )}
+                  {data.competitor_links && data.competitor_links.length > 0 && (
+                    <div>
+                      <p className="text-neutral-400 text-[10px] uppercase font-medium tracking-wider mb-2 flex items-center gap-1">
+                        <Link2 size={10} strokeWidth={1.5} /> Links competidores
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {data.competitor_links.map((link, i) => (
+                          <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="px-2.5 py-1 bg-neutral-800 border border-neutral-700 rounded-lg text-[11px] text-neutral-400 hover:border-neutral-500 hover:text-white transition-colors flex items-center gap-1">
+                            {new URL(link).hostname.replace('www.', '')}
+                            <ExternalLink size={9} strokeWidth={1.5} />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {data.brand_personality && data.brand_personality.length > 0 && (
+                    <div>
+                      <p className="text-neutral-400 text-[10px] uppercase font-medium tracking-wider mb-2">Personalidad</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {data.brand_personality.map(p => (
+                          <span key={p} className="px-2.5 py-1 bg-neutral-900 text-white rounded-full text-[10px] font-medium">
+                            {p}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <DetailItem label="Persona famosa" value={data.brand_celebrity} />
+                  {data.brand_values && data.brand_values.length > 0 && (
+                    <div>
+                      <p className="text-neutral-400 text-[10px] uppercase font-medium tracking-wider mb-2">Valores de marca</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {data.brand_values.map(v => (
+                          <span key={v} className="px-2.5 py-1 bg-neutral-800/40 text-neutral-300 rounded-full text-[10px] font-medium border border-neutral-700">
+                            {v}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <DetailItem label="Tono de voz" value={data.tone_of_voice} />
+                  <DetailItem label="Mercado geográfico" value={data.geographic_market} />
+                </div>
+              </div>
+
+              {/* Referências Visuais (se houver) */}
+              {hasBriefingInfo && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-white text-sm flex items-center gap-2">
+                      <Globe size={14} strokeWidth={1.5} /> Referencias Visuales
+                    </h4>
+                    <DetailItem label="Marcas que admira" value={data.visual_references} />
+                    {data.visual_reference_links && data.visual_reference_links.length > 0 && (
+                      <div>
+                        <p className="text-neutral-400 text-[10px] uppercase font-medium tracking-wider mb-2 flex items-center gap-1">
+                          <Link2 size={10} strokeWidth={1.5} /> Links de referencia
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {data.visual_reference_links.map((link, i) => (
+                            <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="px-2.5 py-1 bg-neutral-800 border border-neutral-700 rounded-lg text-[11px] text-neutral-400 hover:border-neutral-500 hover:text-white transition-colors flex items-center gap-1">
+                              {new URL(link).hostname.replace('www.', '')}
+                              <ExternalLink size={9} strokeWidth={1.5} />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {data.inspiration_links && data.inspiration_links.length > 0 && (
+                      <div>
+                        <p className="text-neutral-400 text-[10px] uppercase font-medium tracking-wider mb-2 flex items-center gap-1">
+                          <Link2 size={10} strokeWidth={1.5} /> Links de inspiración
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {data.inspiration_links.map((link, i) => (
+                            <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="px-2.5 py-1 bg-neutral-800 border border-neutral-700 rounded-lg text-[11px] text-neutral-400 hover:border-neutral-500 hover:text-white transition-colors flex items-center gap-1">
+                              {new URL(link).hostname.replace('www.', '')}
+                              <ExternalLink size={9} strokeWidth={1.5} />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <DetailItem label="Colores preferidos" value={data.preferred_colors} />
+                    {data.preferred_colors_hex && data.preferred_colors_hex.length > 0 && (
+                      <div>
+                        <p className="text-neutral-400 text-[10px] uppercase font-medium tracking-wider mb-2">Paleta de colores</p>
+                        <div className="flex items-center gap-2">
+                          {data.preferred_colors_hex.map((color, i) => (
+                            <div key={i} className="flex flex-col items-center gap-1">
+                              <div className="w-8 h-8 rounded-lg border border-neutral-700 shadow-sm" style={{ backgroundColor: color }} />
+                              <span className="text-[9px] font-mono text-neutral-400">{color}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <DetailItem label="Estilos a evitar" value={data.avoid_styles} />
+                  </div>
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-white text-sm flex items-center gap-2">
+                      <Palette size={14} strokeWidth={1.5} /> Proyecto
+                    </h4>
+                    <DetailItem label="Identidad actual" value={data.current_identity_notes} />
+                    <DetailItem label="Plazo" value={data.desired_deadline} />
+                    <DetailItem label="Inversión" value={data.budget} />
+                    {data.brand_applications && data.brand_applications.length > 0 && (
+                      <div>
+                        <p className="text-neutral-400 text-[10px] uppercase font-medium tracking-wider mb-2">Aplicaciones</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {data.brand_applications.map(a => (
+                            <span key={a} className="px-2.5 py-1 bg-neutral-800/40 text-neutral-300 rounded-full text-[10px] font-medium border border-neutral-700">
+                              {a}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Contacto y Redes */}
+              {(hasContactInfo || hasSocialInfo) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {hasContactInfo && (
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-white text-sm flex items-center gap-2">
+                        <Phone size={14} strokeWidth={1.5} /> Contacto
+                      </h4>
+                      <DetailItem label="WhatsApp" value={data.whatsapp} />
+                      <DetailItem label="Teléfono fijo" value={data.phone_landline} />
+                      <DetailItem label="Móvil" value={data.phone_mobile} />
+                      <DetailItem label="Horario" value={data.business_hours} />
+                    </div>
+                  )}
+                  {hasSocialInfo && (
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-white text-sm flex items-center gap-2">
+                        <AtSign size={14} strokeWidth={1.5} /> Redes Sociales
+                      </h4>
+                      <DetailItem label="Instagram" value={data.social_instagram} />
+                      <DetailItem label="Facebook" value={data.social_facebook} />
+                      <DetailItem label="TikTok" value={data.social_tiktok} />
+                      <DetailItem label="LinkedIn" value={data.social_linkedin} />
+                      <DetailItem label="YouTube" value={data.social_youtube} />
+                      <DetailItem label="Twitter / X" value={data.social_twitter} />
+                      <DetailItem label="Website" value={data.social_website} />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Quiénes somos */}
+              {data.who_we_are && (
+                <DetailItem label="Quiénes somos" value={data.who_we_are} />
+              )}
+
+              {/* Logos */}
+              {data.logo_urls && data.logo_urls.length > 0 && (
+                <div>
+                  <h4 className="font-medium text-white text-sm flex items-center gap-2 mb-3">
+                    <Image size={14} strokeWidth={1.5} /> Logos Enviados
+                  </h4>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                    {data.logo_urls.map((url, i) => (
+                      <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block">
+                        <img
+                          src={url}
+                          alt={`Logo ${i + 1}`}
+                          className="w-full h-20 object-contain rounded-lg border border-neutral-700 bg-neutral-800/60 p-1.5 hover:shadow-md transition-shadow"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {data.created_at && (
+                <p className="text-[10px] text-neutral-400 text-right font-mono">
+                  {new Date(data.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}
+                </p>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </Card>
+  );
+};
+
+export const DashboardTab = ({ projects, onNewProject, onEditProject, onDeleteProject, userRole }: DashboardTabProps) => {
+  const isAdmin = userRole === 'admin';
+
+  // Group projects by user_email for admin view
+  const groupedByUser = isAdmin
+    ? projects.reduce<Record<string, OnboardingData[]>>((acc, project) => {
+        const key = project.user_email || 'Sin usuario';
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(project);
+        return acc;
+      }, {})
+    : null;
+
+  return (
+    <motion.div
+      key="dashboard"
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="space-y-6 max-w-5xl mx-auto"
+    >
+      {/* Cabecera */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">
+            {isAdmin ? 'Todos los Proyectos' : 'Mis Proyectos'}
+          </h1>
+          <p className="text-neutral-500 text-sm">{projects.length} proyecto{projects.length !== 1 ? 's' : ''}{isAdmin ? ' en total' : ` creado${projects.length !== 1 ? 's' : ''}`}</p>
+        </div>
+        {!isAdmin && (
+          <Button onClick={onNewProject} className="shrink-0">
+            <Plus size={18} strokeWidth={1.5} /> Nuevo Proyecto
+          </Button>
+        )}
+      </div>
+
+      {/* Lista de proyectos */}
+      {isAdmin && groupedByUser ? (
+        <div className="space-y-8">
+          {Object.entries(groupedByUser).map(([email, userProjects]) => (
+            <div key={email} className="space-y-4">
+              <div className="flex items-center gap-3 pb-2 border-b border-neutral-800">
+                <div className="w-8 h-8 rounded-lg bg-neutral-800 text-white flex items-center justify-center shrink-0 font-semibold text-xs">
+                  {email.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <p className="text-sm text-white font-medium">{email}</p>
+                  <p className="text-[11px] text-neutral-500">{userProjects.length} proyecto{userProjects.length !== 1 ? 's' : ''}</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                {userProjects.map((project, index) => (
+                  <ProjectCard
+                    key={project.id || index}
+                    data={project}
+                    defaultOpen={false}
+                    onEdit={() => onEditProject(project)}
+                    onDelete={() => onDeleteProject(project.id!)}
+                    userRole={userRole}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {projects.map((project, index) => (
+            <ProjectCard
+              key={project.id || index}
+              data={project}
+              defaultOpen={false}
+              onEdit={() => onEditProject(project)}
+              onDelete={() => onDeleteProject(project.id!)}
+              userRole={userRole}
+            />
+          ))}
+        </div>
+      )}
+    </motion.div>
+  );
+};
