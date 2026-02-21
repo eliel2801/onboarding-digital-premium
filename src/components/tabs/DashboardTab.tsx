@@ -3,6 +3,7 @@ import { CheckCircle2, Clock, Hourglass, Palette, Users, Swords, Image, Plus, Ch
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from '@google/genai';
 import { cn } from '../../lib/utils';
+import { supabase } from '../../lib/supabase';
 import { OnboardingData, UserRole } from '../../types';
 import { Card, Button } from '../ui';
 
@@ -228,7 +229,8 @@ const ProjectCard = ({
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [prdLoading, setPrdLoading] = useState(false);
-  const [prdContent, setPrdContent] = useState<string | null>(null);
+  const [prdContent, setPrdContent] = useState<string | null>(data.prd_content || null);
+  const [showPrdModal, setShowPrdModal] = useState(false);
   const status = statusConfig[data.status] || statusConfig.pending;
   const StatusIcon = status.icon;
   const isArchived = data.deleted_by_user === true;
@@ -304,15 +306,32 @@ const ProjectCard = ({
                   <Trash2 size={14} strokeWidth={1.5} />
                   {userRole === 'admin' ? 'Eliminar permanentemente' : 'Eliminar'}
                 </button>
+                {prdContent && (
+                  <button
+                    onClick={() => setShowPrdModal(true)}
+                    className="flex items-center gap-2 px-4 py-2.5 border border-emerald-900/50 text-emerald-400 text-sm font-medium rounded-xl hover:bg-emerald-950/30 transition-all"
+                  >
+                    <FileText size={14} strokeWidth={1.5} />
+                    Ver PRD
+                  </button>
+                )}
                 <button
                   onClick={async () => {
                     setPrdLoading(true);
                     try {
                       const result = await generatePRD(data);
                       setPrdContent(result);
+                      setShowPrdModal(true);
+                      if (data.id) {
+                        await supabase
+                          .from('business_data')
+                          .update({ prd_content: result })
+                          .eq('id', data.id);
+                      }
                     } catch (err) {
                       console.error('Error generating PRD:', err);
                       setPrdContent('Error al generar el PRD. Por favor intenta de nuevo.');
+                      setShowPrdModal(true);
                     } finally {
                       setPrdLoading(false);
                     }
@@ -321,7 +340,7 @@ const ProjectCard = ({
                   className="flex items-center gap-2 px-4 py-2.5 border border-indigo-900/50 text-indigo-400 text-sm font-medium rounded-xl hover:bg-indigo-950/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {prdLoading ? <Loader2 size={14} strokeWidth={1.5} className="animate-spin" /> : <FileText size={14} strokeWidth={1.5} />}
-                  {prdLoading ? 'Generando PRD...' : 'Generar PRD'}
+                  {prdLoading ? 'Generando...' : prdContent ? 'Regenerar PRD' : 'Generar PRD'}
                 </button>
                 {!isArchived && (
                   <button
@@ -613,8 +632,8 @@ const ProjectCard = ({
 
       {/* PRD Modal */}
       <AnimatePresence>
-        {prdContent && (
-          <PrdModal prdContent={prdContent} onClose={() => setPrdContent(null)} />
+        {showPrdModal && prdContent && (
+          <PrdModal prdContent={prdContent} onClose={() => setShowPrdModal(false)} />
         )}
       </AnimatePresence>
     </Card>
