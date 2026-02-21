@@ -36,9 +36,24 @@ const PrdModal = ({ prdContent, onClose }: { prdContent: string; onClose: () => 
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(prdContent);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(prdContent);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = prdContent;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      console.error('Failed to copy');
+    }
   };
 
   return (
@@ -89,7 +104,7 @@ const PrdModal = ({ prdContent, onClose }: { prdContent: string; onClose: () => 
 
 // ─── Generate PRD with Gemini ───
 async function generatePRD(data: OnboardingData): Promise<string> {
-  const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY });
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
   const projectData = `
 NOMBRE DEL NEGOCIO: ${data.business_name}
