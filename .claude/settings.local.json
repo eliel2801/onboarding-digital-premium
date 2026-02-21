@@ -43,7 +43,17 @@
       "mcp__claude_ai_Supabase__get_logs",
       "Bash(cd E:\\\\ORGANIZADO 2025\\\\onboarding-digital-premium:*)",
       "Bash(gh auth:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(echo === Try restart ===:*)",
+      "Bash(sleep 15:*)",
+      "Bash(head:*)",
+      "Bash(sleep 20:*)",
+      "Bash(echo === Current app config ===:*)",
+      "Bash(sleep 30:*)",
+      "Bash(echo === HIDDEN ERRORS ===:*)",
+      "Bash(sleep 60:*)",
+      "Bash(sleep 90:*)",
+      "mcp__claude_ai_Supabase__get_edge_function"
     ]
   }
 }
